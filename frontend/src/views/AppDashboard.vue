@@ -1,102 +1,56 @@
 <template>
-  <v-app>
-    <!-- 顶部导航栏：增强视觉层次与交互反馈 -->
-    <v-app-bar app color="primary" dark>
-      <v-toolbar-title class="font-weight-bold">Cloud Drive</v-toolbar-title>
-      <v-spacer></v-spacer>
-      <v-toolbar-items>
-        <v-chip label outlined color="white" text-color="white" class="mr-2">
-          {{ userEmail }}
-        </v-chip>
-        <v-btn @click="handleLogout" color="error" depressed rounded elevation="2">
-          <v-icon left>mdi-logout</v-icon>
-          Logout
-        </v-btn>
-      </v-toolbar-items>
-    </v-app-bar>
-
-    <!-- 主内容区：优化容器间距与卡片布局 -->
-    <v-content>
-      <v-container fluid px-6 py-8>
-        <!-- 上传区域卡片：增强阴影与圆角，优化内部排版 -->
-        <v-card elevation="3" class="mb-8" rounded tile>
-          <v-card-title class="font-weight-bold">
-            <v-icon left color="primary">mdi-cloud-upload</v-icon>
-            Upload File
-          </v-card-title>
-          <v-card-text>
-            <v-row align="center" justify="center" class="mb-4">
-              <v-col cols="12" sm="9">
-                <v-file-input label="Select file" @change="handleFileChange" :disabled="uploading" accept="*/*"
-                  prepend-icon="mdi-file" outlined rounded></v-file-input>
-              </v-col>
-              <v-col cols="12" sm="3" class="d-flex justify-center">
-                <v-btn @click="uploadSelectedFile" :disabled="!selectedFile || uploading" color="primary" block
-                  depressed rounded elevation="2">
-                  <v-icon left>mdi-upload</v-icon>
-                  {{ uploading ? 'Uploading...' : 'Upload File' }}
-                </v-btn>
-              </v-col>
-            </v-row>
-
-            <v-alert v-if="uploadStatus" :color="uploadStatus.includes('failed') ? 'error' : 'success'" dense outlined
-              class="mt-4">
-              {{ uploadStatus }}
-            </v-alert>
-          </v-card-text>
-        </v-card>
-
-        <!-- 文件列表卡片：优化空状态与表格视觉 -->
-        <v-card elevation="3" rounded tile>
-          <v-card-title class="font-weight-bold">
-            <v-icon left color="primary">mdi-file-document-multiple</v-icon>
-            Your Files
-          </v-card-title>
-          <v-card-text>
-            <v-skeleton-loader v-if="loadingFiles" type="table" class="mx-auto" width="100%"></v-skeleton-loader>
-
-            <v-empty-state v-else-if="files.length === 0"
-              :img="'https://cdn.vuetifyjs.com/images/empty-states/file-manager.png'" headline="No files uploaded yet"
-              class="d-flex flex-column align-center">
-              <v-btn color="primary" @click="$refs.fileInput.$el.click()" depressed rounded elevation="2" class="mt-4">
-                <v-icon left>mdi-upload</v-icon>
-                Upload your first file
-              </v-btn>
-            </v-empty-state>
-
-            <v-data-table v-else :items="files" :headers="headers" :items-per-page="5" class="elevation-1 rounded mt-4"
-              dense>
-              <!-- eslint-disable-next-line vue/valid-v-slot -->
-              <template v-slot:item.created_at="{ item }">
-                {{ new Date(item.created_at).toLocaleString() }}
-              </template>
-              <!-- eslint-disable-next-line vue/valid-v-slot -->
-              <template v-slot:item.file_size="{ item }">
-                {{ formatFileSize(item.file_size) }}
-              </template>
-              <!-- eslint-disable-next-line vue/valid-v-slot -->
-              <template v-slot:item.actions="{ item }">
-                <v-btn icon @click="handleDownload(item.id, item.filename)" color="primary" size="small"
-                  v-tooltip="{ content: `Download ${item.filename}`, location: 'left' }">
-                  <v-icon>mdi-download</v-icon>
-                </v-btn>
-                <v-btn icon @click="deleteFile(item.id)" color="error" size="small"
-                  :disabled="deletingFiles.includes(item.id)"
-                  v-tooltip="{ content: `Delete ${item.filename}`, location: 'left' }">
-                  <v-icon>
-                    {{ deletingFiles.includes(item.id) ? 'mdi-circle-outline' : 'mdi-delete' }}
-                  </v-icon>
-                </v-btn>
-              </template>
-            </v-data-table>
-          </v-card-text>
-        </v-card>
-      </v-container>
-    </v-content>
-
-    <!-- 隐藏的文件输入（空状态上传触发） -->
-    <input type="file" @change="handleFileChange" ref="fileInput" style="display: none">
-  </v-app>
+  <div class="dashboard">
+    <header>
+      <h1>Cloud Drive</h1>
+      <div class="user-info">
+        <span>{{ userEmail }}</span>
+        <button @click="handleLogout">Logout</button>
+      </div>
+    </header>
+    
+    <div class="upload-section">
+      <h2>Upload File</h2>
+      <input
+        type="file"
+        @change="handleFileChange"
+        ref="fileInput"
+      >
+      <button @click="uploadSelectedFile" :disabled="!selectedFile || uploading">
+        {{ uploading ? 'Uploading...' : 'Upload File' }}
+      </button>
+      <p class="upload-status" v-if="uploadStatus">{{ uploadStatus }}</p>
+    </div>
+    
+    <div class="files-section">
+      <h2>Your Files</h2>
+      <div class="file-list">
+        <div class="file-item" v-for="file in files" :key="file.id">
+          <div class="file-info">
+            <span class="file-name">{{ file.filename }}</span>
+            <span class="file-size">{{ formatFileSize(file.file_size) }}</span>
+            <span class="file-date">{{ new Date(file.created_at).toLocaleString() }}</span>
+          </div>
+          <div class="file-actions">
+            <button 
+        class="action-button download"
+        @click="handleDownload(file.id, file.filename)"  
+      >
+        Download
+      </button>
+            <button 
+              class="action-button delete"
+              @click="deleteFile(file.id)"
+              :disabled="deletingFiles.includes(file.id)"
+            >
+              {{ deletingFiles.includes(file.id) ? 'Deleting...' : 'Delete' }}
+            </button>
+          </div>
+        </div>
+        <p v-if="files.length === 0 && !loadingFiles">No files uploaded yet.</p>
+        <p v-if="loadingFiles">Loading files...</p>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -112,13 +66,7 @@ export default {
       uploadStatus: '',
       files: [],
       loadingFiles: false,
-      deletingFiles: [],
-      headers: [
-        { text: 'File Name', value: 'filename', sortable: true },
-        { text: 'Size', value: 'file_size', sortable: true },
-        { text: 'Upload Date', value: 'created_at', sortable: true },
-        { text: 'Actions', value: 'actions', sortable: false }
-      ]
+      deletingFiles: []
     }
   },
   async mounted() {
@@ -126,13 +74,8 @@ export default {
     await this.loadUserFiles()
   },
   methods: {
-    handleDownload(fileId, filename) {
-      downloadFile(fileId, filename)
-    },
-    handleFileChange(files) {
-      console.log('选中的文件：', files); // 检查控制台是否有文件输出
-      this.selectedFile = files[0] || null;
-      this.uploadStatus = '';
+     handleDownload(fileId, filename) {
+      downloadFile(fileId, filename)  // 调用services中的下载函数
     },
     async loadUserInfo() {
       try {
@@ -144,7 +87,7 @@ export default {
         this.$router.push('/login')
       }
     },
-
+    
     async loadUserFiles() {
       this.loadingFiles = true
       try {
@@ -155,20 +98,23 @@ export default {
         this.loadingFiles = false
       }
     },
-
-
-
+    
+    handleFileChange(event) {
+      this.selectedFile = event.target.files[0]
+      this.uploadStatus = ''
+    },
+    
     async uploadSelectedFile() {
       if (!this.selectedFile) return
-
+      
       this.uploading = true
       this.uploadStatus = ''
       try {
         await uploadFile(this.selectedFile)
         this.uploadStatus = 'File uploaded successfully!'
-        this.$refs.fileInput.value = ''
+        this.$refs.fileInput.value = '' // 重置文件输入
         this.selectedFile = null
-        await this.loadUserFiles()
+        await this.loadUserFiles() // 重新加载文件列表
       } catch (err) {
         this.uploadStatus = 'Upload failed: ' + (err.response?.data?.detail || 'Unknown error')
         console.error('Upload failed', err)
@@ -176,17 +122,14 @@ export default {
         this.uploading = false
       }
     },
-
+    
     downloadFileUrl(fileId) {
       return downloadFile(fileId) + '?token=' + localStorage.getItem('token')
     },
-
+    
     async deleteFile(fileId) {
-      const file = this.files.find(f => f.id === fileId)
-      if (!confirm('Are you sure you want to delete ' + file.filename + '?')) {
-        return
-      }
-
+      if (!confirm('Are you sure you want to delete this file?')) return
+      
       this.deletingFiles.push(fileId)
       try {
         await deleteFile(fileId)
@@ -198,12 +141,12 @@ export default {
         this.deletingFiles = this.deletingFiles.filter(id => id !== fileId)
       }
     },
-
+    
     handleLogout() {
       logout()
       this.$router.push('/login')
     },
-
+    
     formatFileSize(bytes) {
       if (bytes === 0) return '0 Bytes'
       const k = 1024
@@ -216,37 +159,124 @@ export default {
 </script>
 
 <style scoped>
-/* 卡片 hover 阴影过渡，增强立体感 */
-::v-deep .v-card {
-  transition: box-shadow 0.3s ease;
-  padding: 24px;
+.dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
-::v-deep .v-card:hover {
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-}
-
-/* 按钮 hover 亮度调整，提升交互感知 */
-::v-deep .v-btn:not(.v-btn--flat):not(.v-btn--text):not(.v-btn--outlined):hover {
-  filter: brightness(0.9);
-}
-
-/* 输入框与按钮间距优化 */
-::v-deep .v-file-input {
-  margin-bottom: 0;
-}
-
-/* 数据表格顶部间距 */
-::v-deep .v-data-table {
-  margin-top: 16px;
-}
-
-/* 空状态区域垂直居中，优化视觉平衡 */
-::v-deep .v-empty-state {
-  min-height: 200px;
+header {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 30px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.user-info button {
+  padding: 5px 10px;
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.upload-section {
+  background-color: #f5f5f5;
+  padding: 20px;
+  border-radius: 5px;
+  margin-bottom: 30px;
+}
+
+.upload-section input {
+  margin-right: 10px;
+}
+
+.upload-section button {
+  padding: 5px 15px;
+  background-color: #42b983;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.upload-section button:disabled {
+  background-color: #a0d995;
+  cursor: not-allowed;
+}
+
+.upload-status {
+  margin-top: 10px;
+  color: #42b983;
+}
+
+.file-list {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  border-bottom: 1px solid #ddd;
+}
+
+.file-item:last-child {
+  border-bottom: none;
+}
+
+.file-info {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+}
+
+.file-name {
+  font-weight: bold;
+}
+
+.file-size, .file-date {
+  color: #666;
+  font-size: 0.9em;
+}
+
+.file-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.action-button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 0.9em;
+}
+
+.download {
+  background-color: #2196f3;
+  color: white;
+}
+
+.delete {
+  background-color: #ff4444;
+  color: white;
+}
+
+.delete:disabled {
+  background-color: #ffaaaa;
+  cursor: not-allowed;
 }
 </style>
