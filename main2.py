@@ -99,5 +99,5 @@ async def get_current_active_user(current_user: Annotated[User, Depends(get_curr
 
 @app.post("/token")
 async def login_for_access_token(
-    form_data: Annotated[OAuth]
-)
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],)->Token:
+    user = authenticate_user
