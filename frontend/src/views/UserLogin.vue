@@ -43,6 +43,18 @@
             class="input"
           >
         </div>
+        
+        <!-- 新增：记住密码选项 -->
+        <div class="remember-me">
+          <input
+            type="checkbox"
+            id="rememberMe"
+            v-model="rememberMe"
+            class="checkbox"
+          >
+          <label for="rememberMe" class="remember-label">{{ $t('rememberPassword') }}</label>
+        </div>
+        
         <button type="submit" :disabled="loading" class="btn">
           <span v-if="!loading">{{ $t('login') }}</span>
           <span v-else class="loading">
@@ -70,6 +82,8 @@ export default {
       password: '',
       loading: false,
       error: '',
+      // 新增：记住密码状态
+      rememberMe: false,
       
       // 主题和语言状态（与其他页面同步）
       isDarkMode: false,
@@ -83,6 +97,8 @@ export default {
           loggingIn: 'Logging in...',
           noAccount: "Don't have an account?",
           registerHere: 'Register here',
+          // 新增：记住密码翻译
+          rememberPassword: 'Remember me',
           changeLanguage: 'Change language',
           toggleTheme: 'Toggle theme',
           lightMode: 'Light mode',
@@ -96,6 +112,8 @@ export default {
           loggingIn: '登录中...',
           noAccount: '还没有账号？',
           registerHere: '注册账号',
+          // 新增：记住密码翻译
+          rememberPassword: '记住密码',
           changeLanguage: '切换语言',
           toggleTheme: '切换主题',
           lightMode: '亮色模式',
@@ -110,8 +128,10 @@ export default {
     }
   },
   mounted() {
-    // 加载全局状态（与其他页面同步）
+    // 加载全局状态（主题、语言）
     this.loadUserPreferences()
+    // 新增：加载保存的密码（如果有）
+    this.loadSavedCredentials()
   },
   methods: {
     // 加载用户偏好设置（主题、语言）
@@ -121,6 +141,22 @@ export default {
       
       if (savedTheme) this.isDarkMode = savedTheme === 'dark'
       if (savedLang && ['en', 'zh'].includes(savedLang)) this.currentLanguage = savedLang
+    },
+    
+    // 新增：加载保存的账号密码
+    loadSavedCredentials() {
+      const savedCredentials = localStorage.getItem('savedCredentials')
+      if (savedCredentials) {
+        try {
+          const { email, password } = JSON.parse(savedCredentials)
+          this.email = email || ''
+          this.password = password || ''
+          this.rememberMe = true // 自动勾选"记住我"
+        } catch (e) {
+          console.error('Failed to parse saved credentials', e)
+          localStorage.removeItem('savedCredentials') // 清除损坏的存储数据
+        }
+      }
     },
     
     // 切换主题（全局生效）
@@ -135,12 +171,23 @@ export default {
       localStorage.setItem('language', this.currentLanguage)
     },
     
-    // 原有登录逻辑
+    // 原有登录逻辑（新增：处理记住密码）
     async handleLogin() {
       this.loading = true
       this.error = ''
       try {
         await login(this.email, this.password)
+        
+        // 新增：根据"记住我"状态保存/清除账号密码
+        if (this.rememberMe) {
+          localStorage.setItem('savedCredentials', JSON.stringify({
+            email: this.email,
+            password: this.password
+          }))
+        } else {
+          localStorage.removeItem('savedCredentials') // 取消记住时清除
+        }
+        
         this.$router.push('/dashboard')
       } catch (err) {
         this.error = err.response?.data?.detail || (this.currentLanguage === 'en' 
@@ -155,7 +202,33 @@ export default {
 </script>
 
 <style scoped>
-/* 基础样式 */
+/* 原有样式保持不变，新增以下样式 */
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -1rem 0 1.5rem 0; /* 调整与上下元素的间距 */
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #1976d2; /* 使用主色调作为复选框选中色 */
+  cursor: pointer;
+}
+
+.remember-label {
+  color: #5f6368;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.dark-theme .remember-label {
+  color: #d0d0d0;
+}
+
+/* 其他原有样式保持不变 */
 .auth-container {
   display: flex;
   justify-content: center;
@@ -166,7 +239,6 @@ export default {
   transition: background-color 0.3s;
 }
 
-/* 暗色主题 */
 .auth-container.dark-theme {
   background-color: #121212;
 }
