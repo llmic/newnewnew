@@ -10,8 +10,11 @@ def get_user(db: Session, user_id: int):
 def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email == email).first()
 
+# crud.py
 def create_user(db: Session, user: schemas.UserCreate):
-    hashed_password = get_password_hash(user.password)
+    # 截断密码到72字节（bcrypt限制）
+    truncated_password = user.password[:72]  # 关键：添加这行截断密码
+    hashed_password = get_password_hash(truncated_password)  # 使用截断后的密码
     db_user = models.User(email=user.email, hashed_password=hashed_password)
     db.add(db_user)
     db.commit()

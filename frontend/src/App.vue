@@ -1,20 +1,21 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <!-- 唯一根元素 -->
+  <div id="app">
+    <!-- 路由出口：所有路由对应的页面会在这里显示 -->
+    <router-view/>
+  </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+// 删除默认的 HelloWorld 导入（不需要）
 
 export default {
-  name: 'App',
-  components: {
-    HelloWorld
-  }
+  name: 'App'  // 组件名（多单词也可以，如 AppContainer）
 }
 </script>
 
 <style>
+/* 可以保留默认样式，或根据需要修改 */
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
