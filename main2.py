@@ -96,3 +96,8 @@ async def get_current_active_user(current_user: Annotated[User, Depends(get_curr
     if current_user.disabled:
         raise HTTPException(status_code=400,detail="Inactive user")
     return current_user
+
+@app.post("/token")
+async def login_for_access_token(
+    form_data: Annotated[OAuth]
+)
