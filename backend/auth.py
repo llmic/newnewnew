@@ -10,7 +10,7 @@ import schemas
 from database import get_db
 
 # 配置
-SECRET_KEY = "your-secret-key-keep-it-safe-and-secret"
+SECRET_KEY = "594E0A7BB12124A2ACD7AF6EEA021A5AB0591E34"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
